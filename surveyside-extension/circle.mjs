@@ -48,7 +48,8 @@ export function drawCircle({scanId, choiceId}) {
   const observer = new MutationObserver(queue);
   const resizeObserver = new ResizeObserver(queue);
   state.cleanup = cleanup;
-  observer.observe(document.body, {subtree: true, childList: true, characterData: true, attributes: true}); resizeObserver.observe(choice.element);
+  for (const root of state.roots) observer.observe(root === document ? document.body : root, {subtree: true, childList: true, characterData: true, attributes: true});
+  resizeObserver.observe(choice.element);
   window.addEventListener('scroll', queue, true); window.addEventListener('resize', queue);
   window.addEventListener('pagehide', cleanup); window.addEventListener('popstate', cleanup); window.addEventListener('hashchange', cleanup);
   document.addEventListener('change', cleanup, true); document.addEventListener('keydown', escape, true);

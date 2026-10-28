@@ -79,7 +79,7 @@ export function scanDocument() {
     }
   }
   const snapshotNow = () => roots.map(root => safeText(root === document ? document.body : root, 24000)).join('\n');
-  globalThis.__surveysideScan = {scanId, targets, page: location.href, snapshotNow, snapshot: snapshotNow(), cleanup: null};
+  globalThis.__surveysideScan = {scanId, targets, roots, page: location.href, snapshotNow, snapshot: snapshotNow(), cleanup: null};
   const origins = new Set();
   for (const frame of document.querySelectorAll('iframe[src]')) {
     try {

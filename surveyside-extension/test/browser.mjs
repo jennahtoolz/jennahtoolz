@@ -47,7 +47,7 @@ try {
       const headers = {'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key'};
       if (route.request().method() === 'OPTIONS') return route.fulfill({status: 204, headers});
       requests.push({url, headers: route.request().headers(), body: route.request().postDataJSON()});
-      const selected = lastChoices.find(choice => choice.label === (choiceMode === 'dropdown' ? 'Once a week' : 'Yes'));
+      const selected = lastChoices.find(choice => choice.label === (choiceMode === 'dropdown' ? 'Once a week' : choiceMode === 'shadow' ? 'Shadow answer' : 'Yes'));
       const choiceId = choiceMode === 'unknown' ? 'invented-option' : choiceMode === 'missing' ? null : selected?.id || null;
       const text = JSON.stringify({explanation: 'Yes matches buying coffee yesterday. <img src=x onerror=alert(1)>', choiceId});
       return route.fulfill({status: failProvider ? 429 : 200, headers, contentType: 'application/json', body: JSON.stringify(failProvider ? {error: {message: 'fixture-only'}} : {candidates: [{content: {parts: [{text}]}}]})});
@@ -59,6 +59,7 @@ try {
   await survey.frameLocator('iframe[title="Local same-origin question"]').getByText('In the past 7 days', {exact: false}).waitFor();
   await survey.frameLocator('iframe[title="Local separate-site question"]').getByText('Cross-site fixture question').waitFor();
   await survey.evaluate(() => { const select = document.createElement('select'); select.innerHTML = '<option>Every day</option><option>Once a week</option>'; document.body.append(select); });
+  await survey.evaluate(() => { const option = document.createElement('div'); option.role = 'radio'; option.textContent = 'Shadow answer'; document.querySelector('#shadow').shadowRoot.append(option); });
   const panel = await context.newPage();
   panel.on('pageerror', error => errors.push(error.message));
   await panel.exposeFunction('__extensionStorage', ({area, method, value}) => {
@@ -183,6 +184,14 @@ try {
   await panel.getByRole('button', {name: 'Hide circle', exact: true}).click();
   await survey.locator('[data-surveyside-circle]').waitFor({state: 'detached'});
   console.log('PASS dropdown: control is circled and the recommended option is named without changing the selected value; Hide circle cleans up.');
+  await panel.getByRole('button', {name: 'Scan current page', exact: true}).click();
+  await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('Captured locally'));
+  choiceMode = 'shadow';
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
+  await survey.locator('[data-surveyside-circle]').waitFor({state: 'attached'});
+  await survey.evaluate(() => { document.querySelector('#shadow').shadowRoot.querySelector('p').textContent = 'Changed shadow question'; });
+  await survey.locator('[data-surveyside-circle]').waitFor({state: 'detached'});
+  console.log('PASS custom shadow control: captured option is circled and changes inside its shadow root remove the suggestion.');
   await panel.reload();
   await panel.waitForFunction(() => document.querySelector('#api-key').value === 'fixture-key-not-real');
   assert.equal(await panel.locator('#question').inputValue(), '');
