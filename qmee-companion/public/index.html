@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#245b47">
+  <title>SurveySide · Your Qmee companion</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23245b47'/%3E%3Ctext x='32' y='46' font-family='sans-serif' font-size='44' text-anchor='middle' fill='%23d6f5a3'%3Es%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to dashboard</a>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="SurveySide home"><span class="brand-mark">s<span>✦</span></span>SurveySide<span class="brand-dot">.</span></a>
+    <p class="sidebar-caption">YOUR QMEE COMPANION</p>
+    <nav aria-label="Main navigation">
+      <a class="nav-item active" href="#main"><span aria-hidden="true">▦</span>Overview</a>
+      <a class="nav-item" href="#surveys"><span aria-hidden="true">▤</span>My surveys</a>
+      <a class="nav-item" href="#assistant"><span aria-hidden="true">✧</span>AI assistant<span class="pill">AI</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="side-note"><span class="note-spark" aria-hidden="true">✦</span><h3>A little focus goes a long way.</h3><p>Set a small goal. Pick a survey that’s worth your time.</p><a href="https://www.qmee.com/" target="_blank" rel="noopener noreferrer">Open Qmee <span aria-hidden="true">→</span></a></div>
+      <button id="settings-button" class="nav-item settings" type="button"><span aria-hidden="true">⚙</span>Preferences</button>
+      <p class="independent">Independent companion · Not affiliated with Qmee</p>
+    </div>
+  </aside>
+
+  <main id="main" tabindex="-1">
+    <header class="topbar"><span class="breadcrumb">Your workspace <span>/</span> <strong>Overview</strong></span><span class="local-badge"><span></span> Your survey log</span></header>
+    <div class="page-content">
+      <section class="page-heading"><div><p class="eyebrow" id="today-label">YOUR DAILY HEAD START</p><h1>A little clarity for every question<span>.</span></h1><p>Understand the wording. Find the choice that fits you.</p></div><button class="button primary" id="add-survey" type="button"><span aria-hidden="true">＋</span> Add a survey</button></section>
+      <div id="page-error" class="error-banner" role="alert" hidden></div>
+      <div class="workspace-grid">
+        <div class="dashboard-column">
+          <section class="panel question-panel" aria-labelledby="question-title"><div class="panel-heading"><div><p class="eyebrow">YOUR QUESTION COACH</p><h2 id="question-title">Untangle a tricky question.</h2><p>Paste the question and its answer choices. We’ll work through what they mean.</p></div><span class="question-spark" aria-hidden="true">✧</span></div><form id="question-form"><label class="sr-only" for="question-text">Survey question and answer choices</label><textarea id="question-text" maxlength="2500" rows="4" placeholder="Paste a survey question and its answer choices here…" required></textarea><label for="question-context">What’s confusing you? <span class="optional">Optional</span></label><input id="question-context" maxlength="1000" placeholder="e.g. Does ‘past month’ mean 30 days or this calendar month?"><p class="field-help">An explanation uses the question and context you send to the AI provider.</p><div class="question-actions"><span id="question-connection">Checking AI connection…</span><button id="question-send" class="button primary" type="submit">Explain my choices <span aria-hidden="true">→</span></button></div></form></section>
+          <section class="stats" aria-label="Earnings overview">
+            <article class="stat-card"><div class="stat-top"><span>Earned today</span><span class="stat-icon mint" aria-hidden="true">→</span></div><strong id="today-earned">—</strong><p id="today-count">Loading your dashboard…</p></article>
+            <article class="stat-card"><div class="stat-top"><span>Total earned</span><span class="stat-icon lavender" aria-hidden="true">◇</span></div><strong id="total-earned">—</strong><p id="completed-count">Your logged rewards</p></article>
+            <article class="stat-card"><div class="stat-top"><span>Ready to try</span><span class="stat-icon peach" aria-hidden="true">◷</span></div><strong id="available-count">—</strong><p>Surveys in your shortlist</p></article>
+          </section>
+
+          <section class="goal-card" aria-labelledby="goal-title"><div class="goal-copy"><span class="eyebrow">ONE STEP AT A TIME</span><h2 id="goal-title">Your daily goal</h2><p id="goal-caption">A small target can make a big difference.</p><div class="goal-line"><span id="goal-amount">—</span><span id="goal-percent">0%</span></div><progress id="goal-progress" max="100" value="0" aria-label="Daily earnings goal"></progress><button class="text-button" id="edit-goal" type="button">Edit daily goal <span aria-hidden="true">→</span></button></div><div class="goal-art" aria-hidden="true"><span class="art-star">✦</span><div class="coin coin-back">+</div><div class="coin coin-front">$</div><span class="art-dot"></span><span class="art-line"></span></div></section>
+
+          <section id="surveys" class="panel surveys-panel" aria-labelledby="surveys-title"><div class="panel-heading"><div><h2 id="surveys-title">Your survey shortlist <span id="survey-count" class="count-badge">0</span></h2><p>Compare the reward before you spend the time.</p></div><label class="sr-only" for="survey-filter">Filter surveys</label><select id="survey-filter"><option value="available">Available</option><option value="completed">Completed</option><option value="screened_out">Screened out</option><option value="all">All surveys</option></select></div><div class="table-labels"><span>Survey</span><span>Reward / time</span><span>Est. per hour</span><span class="sr-only">Actions</span></div><div id="survey-list" class="survey-list" aria-live="polite"><p class="empty-text">Loading surveys…</p></div><p class="table-note">Hourly rates are estimates. Eligibility and actual completion time vary.</p></section>
+
+          <section class="panel activity-panel" aria-labelledby="activity-title"><div class="panel-heading"><div><h2 id="activity-title">Small wins add up</h2><p>Your logged earnings over the last 7 days.</p></div><button id="export-data" class="text-button" type="button">Export CSV <span aria-hidden="true">↓</span></button></div><div id="earnings-chart" class="chart" aria-label="Daily earnings chart"></div></section>
+        </div>
+
+        <aside id="assistant" class="assistant-panel" aria-labelledby="assistant-title"><div class="assistant-heading"><span class="assistant-icon" aria-hidden="true">✧</span><div><h2 id="assistant-title">Your answer guide</h2><p>A little help from AI</p></div><span id="ai-status" class="status-chip">Checking</span></div><div class="assistant-intro"><h3>Less guessing. <br>More clarity.</h3><p>Understand tricky wording, notice explicit instructions, and find the option that matches your situation.</p></div><div class="prompt-chips" id="prompt-chips"><button type="button" data-prompt="Help me understand what this question is really asking: ">✦ Decode a question <span>→</span></button><button type="button" data-prompt="Help me compare these answer choices and understand when each would fit: ">◇ Compare answer choices <span>→</span></button><button type="button" data-prompt="What are some reasons a survey might screen me out even when I answer accurately?">? Why did I get screened out? <span>→</span></button></div><p id="ai-setup" class="setup-note" hidden>AI needs a connection. Add <code>QMEE_AI_API_KEY</code> to your hosting environment’s secrets, then restart or redeploy. Tracking and comparisons work now.</p><div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-label="Assistant conversation"></div><div id="chat-error" class="chat-error" role="alert" hidden></div><form id="chat-form" class="chat-form"><label class="sr-only" for="chat-input">Message your AI assistant</label><textarea id="chat-input" rows="2" maxlength="4000" placeholder="Ask about a question or answer choice…" required></textarea><div class="chat-form-bottom"><span>Share only what you’re comfortable sending.</span><button id="chat-send" type="submit" aria-label="Send message">↑</button></div></form><p class="assistant-footnote">AI can make mistakes. Qualification isn’t guaranteed.</p></aside>
+      </div>
+      <footer class="page-footer"><span>Good decisions start with a little clarity.</span><span>Built for your next small win <span aria-hidden="true">✧</span></span></footer>
+    </div>
+  </main>
+
+  <dialog id="survey-dialog"><form id="survey-form"><div class="dialog-heading"><div><p class="eyebrow">BUILD YOUR SHORTLIST</p><h2>Add a survey</h2></div><button type="button" class="icon-button" data-close="survey-dialog" aria-label="Close">×</button></div><p class="dialog-description">Copy the reward and estimated time from Qmee.</p><label for="survey-title">Survey name</label><input id="survey-title" name="title" maxlength="120" placeholder="e.g. Shopping habits" required><div class="form-row"><div><label for="survey-reward">Reward <span id="reward-currency">(USD)</span></label><input id="survey-reward" name="reward" type="number" min="0.01" max="1000" step="0.01" placeholder="1.50" required></div><div><label for="survey-minutes">Estimated minutes</label><input id="survey-minutes" name="minutes" type="number" min="1" max="600" step="1" placeholder="10" required></div></div><p id="rate-preview" class="rate-preview">Add a reward and time to compare its value.</p><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="button secondary" type="button" data-close="survey-dialog">Cancel</button><button class="button primary" type="submit">Add to shortlist</button></div></form></dialog>
+
+  <dialog id="settings-dialog"><form id="settings-form"><div class="dialog-heading"><div><p class="eyebrow">MAKE IT YOURS</p><h2>Your preferences</h2></div><button type="button" class="icon-button" data-close="settings-dialog" aria-label="Close">×</button></div><label for="currency">Currency</label><select id="currency" name="currency"><option value="USD">USD · US dollar</option><option value="GBP">GBP · British pound</option><option value="CAD">CAD · Canadian dollar</option><option value="AUD">AUD · Australian dollar</option><option value="EUR">EUR · Euro</option></select><p class="field-help">Choose before adding surveys. Existing records are never currency-converted.</p><label for="daily-goal">Daily earnings goal</label><input id="daily-goal" name="dailyGoal" type="number" min="0.01" max="10000" step="0.01" required><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="button secondary" type="button" data-close="settings-dialog">Cancel</button><button class="button primary" type="submit">Save preferences</button></div></form></dialog>
+  <dialog id="delete-dialog"><form id="delete-form"><div class="dialog-heading"><h2>Remove this record?</h2><button type="button" class="icon-button" data-close="delete-dialog" aria-label="Close">×</button></div><p id="delete-description" class="dialog-description"></p><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="button secondary" type="button" data-close="delete-dialog">Keep record</button><button class="button danger" type="submit">Remove record</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "surveyside",
+  "main": "cloudflare/worker.mjs",
+  "compatibility_date": "2026-10-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "surveyside",
+    // Replace this placeholder with the ID from `npx wrangler d1 create surveyside`.
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "cloudflare/migrations"
+  }],
+  "vars": { "QMEE_AI_MODEL": "gpt-4.1-mini" }
+}

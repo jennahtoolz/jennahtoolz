@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS dashboard (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS ai_lease (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  owner TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+);
