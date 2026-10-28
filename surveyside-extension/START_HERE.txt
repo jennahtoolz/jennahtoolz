@@ -1,0 +1,23 @@
+SurveySide for Chrome
+
+1. Extract the ZIP to a folder you will keep.
+2. In Chrome's address bar, open chrome://extensions
+3. Turn Developer mode ON (top right).
+4. Click Load unpacked. Choose the folder containing manifest.json.
+5. Pin SurveySide from Chrome's puzzle-piece extensions menu.
+6. Open your survey and click the SurveySide icon.
+7. In Setup, add your Gemini API key and click Save setup.
+   Get your own key at https://aistudio.google.com/apikey
+8. Click Scan current page. Review the captured question.
+9. Click Explain my choices to ask Gemini for help.
+
+For screen reading, check Include a screenshot of the visible tab
+before scanning. The screenshot appears as a preview before sending.
+Use Allow embedded survey sites if a survey frame needs permission.
+
+No Python, npm, or Cloudflare setup is needed. Chrome 116+ is required.
+The key lasts for this browser session; enter it again after restarting.
+The extension explains choices using your facts. You choose the answer.
+Provider qualification and screen-outs cannot be guaranteed.
+
+See README.md for data handling, permissions and testing limitations.

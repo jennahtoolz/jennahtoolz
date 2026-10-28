@@ -1,0 +1,36 @@
+:root { color-scheme: light; font: 14px/1.5 system-ui, sans-serif; color: #243247; background: #f5f7fb; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 260px; }
+header { display: flex; align-items: center; gap: 12px; background: #172e42; color: white; padding: 23px 20px; }
+.logo { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #a9e7c8; color: #172e42; font-size: 24px; font-weight: 800; }
+h1 { margin: 0; font-size: 22px; letter-spacing: -.5px; }
+header p { margin: 0; color: #cfdfec; font-size: 12px; }
+main { padding: 16px; max-width: 600px; margin: auto; }
+section, details { background: white; border: 1px solid #dee5ee; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+summary { cursor: pointer; font-weight: 700; }
+#key-state { font-size: 11px; float: right; font-weight: 500; color: #47627d; }
+h2 { margin: 0 0 6px; font-size: 17px; }
+p { margin: 6px 0 12px; }
+label { display: block; margin: 14px 0 5px; font-weight: 650; }
+input:not([type=checkbox]), textarea { display: block; width: 100%; border: 1px solid #b9c7d8; border-radius: 8px; padding: 10px; color: inherit; background: #fff; font: inherit; }
+textarea { resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid #70a7e8; outline-offset: 2px; }
+.hint, .optional { color: #576b80; font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+.check { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 400; margin-bottom: 14px; }
+.check input { margin: 3px 0 0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+button { border: 1px solid #c5d3e0; border-radius: 9px; background: #edf3f8; color: #203b54; padding: 10px 13px; font: 650 13px system-ui, sans-serif; cursor: pointer; }
+button:hover { filter: brightness(.96); }
+button:disabled { opacity: .55; cursor: wait; }
+.primary { background: #206247; color: white; border-color: #206247; }
+.quiet { background: white; }
+.wide { width: 100%; margin-top: 14px; }
+a { color: #175b92; }
+figure { margin: 14px 0 0; }
+figure img { display: block; width: 100%; border: 1px solid #dae3ed; border-radius: 8px; }
+figcaption { font-size: 11px; color: #576b80; margin: 5px 0; }
+#answer { white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0 15px; }
+#error { color: #8c2525; background: #fff0f0; border: 1px solid #edcccc; padding: 12px; border-radius: 8px; }
+#status { color: #285d46; }
+footer { font-size: 11px; color: #637489; text-align: center; padding: 0 8px 16px; }
+[hidden] { display: none !important; }

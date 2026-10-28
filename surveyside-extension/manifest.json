@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "SurveySide — Survey Question Helper",
+  "version": "1.0.0",
+  "minimum_chrome_version": "116",
+  "description": "Scan a survey page or capture the visible tab, then review AI explanations beside your survey.",
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
+  "host_permissions": ["https://*.qmee.com/*", "https://generativelanguage.googleapis.com/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": {"service_worker": "background.mjs", "type": "module"},
+  "action": {"default_title": "Open SurveySide"},
+  "side_panel": {"default_path": "panel.html"},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; connect-src https://generativelanguage.googleapis.com; img-src 'self' data:; style-src 'self'; base-uri 'none'"}
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SurveySide</title><link rel="stylesheet" href="panel.css"></head>
+<body>
+  <header><span class="logo" aria-hidden="true">S</span><div><h1>SurveySide</h1><p>A little clarity beside your survey.</p></div></header>
+  <main>
+    <details id="setup" open>
+      <summary>Setup <span id="key-state">Add Gemini key</span></summary>
+      <label for="api-key">Gemini API key</label><input id="api-key" type="password" autocomplete="off" maxlength="256" placeholder="Paste your key here">
+      <p class="hint">Kept for this Chrome session only. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get a key</a></p>
+      <label for="model">Gemini model</label><input id="model" value="gemini-flash-latest" maxlength="100" spellcheck="false">
+      <label for="facts">Your facts <span class="optional">optional</span></label><textarea id="facts" rows="3" maxlength="4000" placeholder="Facts you want the helper to use when matching choices."></textarea>
+      <p class="hint">Facts stay on this device and are sent with a question only when you ask for help.</p>
+      <div class="row"><button id="save" type="button">Save setup</button><button id="forget" class="quiet" type="button">Forget key</button></div>
+    </details>
+    <section aria-label="Capture a question">
+      <h2>Read the question</h2>
+      <p>Open your survey, then scan its readable text.</p>
+      <label class="check"><input id="include-image" type="checkbox"> Include a screenshot of the visible tab</label>
+      <div class="row"><button id="scan" type="button" class="primary">Scan current page</button><button id="clear" type="button" class="quiet">Clear</button></div>
+      <p id="capture-meta" class="hint">Nothing captured yet.</p>
+      <div id="frame-access" hidden><p class="hint">Some embedded survey questions need access to their own site.</p><button id="allow-frames" type="button">Allow embedded survey sites</button><p id="frame-sites" class="hint"></p></div>
+      <label for="question">Question and choices</label><textarea id="question" rows="8" maxlength="24000" placeholder="Scan the page, or paste the question and choices here. You can edit this preview before sending."></textarea>
+      <figure id="image-preview" hidden><img id="capture-image" alt="Preview of the visible survey tab"><figcaption>Visible tab only. Review it before sending.</figcaption><button id="remove-image" type="button" class="quiet">Remove screenshot</button></figure>
+    </section>
+    <section aria-label="Get an explanation">
+      <label for="note">What’s confusing? <span class="optional">optional</span></label><textarea id="note" rows="2" maxlength="2000" placeholder="For example: does “past month” include yesterday?"></textarea>
+      <button id="explain" type="button" class="primary wide">Explain my choices</button>
+      <p class="hint">Sends this preview, your facts and any screenshot directly to Gemini. You choose the answer on the survey.</p>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p id="error" role="alert" hidden></p>
+    <section id="answer-section" hidden><h2>Here’s the explanation</h2><div id="answer"></div><button id="copy" type="button" class="quiet">Copy explanation</button></section>
+    <footer>Answers depend on your own facts. Survey eligibility is decided by the provider.</footer>
+  </main>
+  <script type="module" src="panel.mjs"></script>
+</body></html>
