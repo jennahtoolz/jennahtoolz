@@ -4,6 +4,8 @@ let apiKey = '';
 let screenshot = '';
 let missingOrigins = [];
 let busy = false;
+let capture = null;
+let circledTabId = null;
 
 function status(text) { $('status').textContent = text; }
 function failure(error) { $('error').textContent = error.message || 'Something went wrong. Try again.'; $('error').hidden = false; }
@@ -19,11 +21,16 @@ async function message(input) {
 }
 function removeImage() { screenshot = ''; $('capture-image').removeAttribute('src'); $('image-preview').hidden = true; }
 function clearAnswer() { $('answer').textContent = ''; $('answer-section').hidden = true; }
+async function hideCircle() {
+  const tabId = circledTabId; circledTabId = null; $('hide-circle').hidden = true;
+  if (tabId !== null) { try { await message({type: 'clear-circle', tabId}); } catch { /* The old page may already be gone. */ } }
+}
 async function scan() {
   if (busy) return;
   setBusy(true); clearError(); clearAnswer(); removeImage(); status('Reading the current page…');
   try {
-    const capture = await message({type: 'scan'});
+    await hideCircle(); capture = null;
+    capture = await message({type: 'scan'});
     $('question').value = capture.text;
     missingOrigins = capture.missingOrigins;
     $('frame-access').hidden = !missingOrigins.length;
@@ -46,8 +53,11 @@ $('allow-frames').addEventListener('click', async () => {
     if (granted) await scan(); else status('Access was not granted. You can use a screenshot or paste the question.');
   } catch { failure(new Error('Chrome could not grant embedded-site access. Try a screenshot or paste the question.')); }
 });
-$('remove-image').addEventListener('click', removeImage);
-$('clear').addEventListener('click', () => {
+$('remove-image').addEventListener('click', () => { removeImage(); clearAnswer(); void hideCircle(); });
+$('hide-circle').addEventListener('click', async () => { await hideCircle(); status('Circle hidden.'); });
+for (const id of ['question', 'facts', 'note']) $(id).addEventListener('input', () => { clearAnswer(); void hideCircle(); });
+$('clear').addEventListener('click', async () => {
+  await hideCircle(); capture = null;
   $('question').value = ''; $('note').value = ''; $('capture-meta').textContent = 'Nothing captured yet.';
   missingOrigins = []; $('frame-access').hidden = true; removeImage(); clearAnswer(); clearError(); status('Capture cleared.');
 });
@@ -71,8 +81,18 @@ $('explain').addEventListener('click', async () => {
   if (busy) return;
   clearError(); clearAnswer(); setBusy(true); status('Asking Gemini…');
   try {
-    const result = await explain({key: apiKey, model: $('model').value.trim() || 'gemini-flash-latest', question: $('question').value, facts: $('facts').value, note: $('note').value, screenshot});
-    $('answer').textContent = result; $('answer-section').hidden = false; status('Explanation ready. Review it alongside your question.');
+    await hideCircle();
+    const choices = capture && capture.text === $('question').value ? capture.choices : [];
+    const result = await explain({key: apiKey, model: $('model').value.trim() || 'gemini-flash-latest', question: $('question').value, facts: $('facts').value, note: $('note').value, screenshot, choices});
+    $('answer').textContent = result.explanation; $('answer-section').hidden = false;
+    const choice = choices?.find(option => option.id === result.choiceId);
+    if (choice) {
+      try {
+        const marked = await message({type: 'circle', tabId: capture.tabId, windowId: capture.windowId, choice});
+        circledTabId = capture.tabId; $('hide-circle').hidden = false;
+        status(marked.kind === 'dropdown' ? `Circled the dropdown. Choose “${marked.label}” inside it.` : `Circled “${marked.label}” on the survey page.`);
+      } catch (error) { status(`Explanation ready. No circle added: ${error.message}`); }
+    } else status(capture && capture.text !== $('question').value ? 'Explanation ready. Scan the current page again to enable circling after editing the preview.' : 'Explanation ready. No single captured option was identified with enough information to circle.');
   } catch (error) { status(''); failure(error); if (!apiKey) $('setup').open = true; }
   finally { setBusy(false); }
 });

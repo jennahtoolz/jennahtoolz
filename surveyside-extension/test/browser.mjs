@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {scanDocument} from '../scanner.mjs';
 import {summarizeFrames} from '../scan-results.mjs';
+import {drawCircle, clearCircle} from '../circle.mjs';
 const require = createRequire(new URL('../../qmee-companion/package.json', import.meta.url));
 const {chromium} = require('playwright');
 const extension = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -16,6 +17,10 @@ const requests = [], unexpected = [], errors = [];
 const storage = {local: {}, session: {}};
 const allowedOrigins = new Set(['https://app.qmee.com/*']);
 let failProvider = false;
+let lastChoices = [];
+let choiceMode = 'valid';
+let circleCalls = 0;
+let changeBeforeCircle = false;
 let browser;
 const frame = '<!doctype html><html><body><h2>In the past 7 days, did you buy coffee?</h2><label><input type="radio" name="coffee">Yes</label><label><input type="radio" name="coffee">No</label><button>Continue</button></body></html>';
 const fixture = `<!doctype html><html><head><title>Local survey fixture</title></head><body><h1>Your survey</h1><p>Choose the answer matching your own purchases.</p><label>Password <input type="password" value="never-scan-this-password"></label><input type="hidden" value="never-scan-hidden-value"><div hidden>never-scan-hidden-text</div><div style="opacity:0">never-scan-transparent-text</div><textarea>never-scan-typed-response</textarea><div id="shadow"></div><iframe title="Local same-origin question" src="/fixture-frame"></iframe><iframe title="Local separate-site question" src="https://survey.fixture.invalid/frame"></iframe><script>document.querySelector('#shadow').attachShadow({mode:'open'}).innerHTML='<p>Open shadow question</p>';window.clickCount=0;document.querySelectorAll('input,button').forEach(node=>node.addEventListener('click',()=>window.clickCount++));</script></body></html>`;
@@ -42,7 +47,10 @@ try {
       const headers = {'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type,x-goog-api-key'};
       if (route.request().method() === 'OPTIONS') return route.fulfill({status: 204, headers});
       requests.push({url, headers: route.request().headers(), body: route.request().postDataJSON()});
-      return route.fulfill({status: failProvider ? 429 : 200, headers, contentType: 'application/json', body: JSON.stringify(failProvider ? {error: {message: 'fixture-only'}} : {candidates: [{content: {parts: [{text: 'Yes matches buying coffee yesterday. <img src=x onerror=alert(1)>'}]}}]})});
+      const selected = lastChoices.find(choice => choice.label === (choiceMode === 'dropdown' ? 'Once a week' : 'Yes'));
+      const choiceId = choiceMode === 'unknown' ? 'invented-option' : choiceMode === 'missing' ? null : selected?.id || null;
+      const text = JSON.stringify({explanation: 'Yes matches buying coffee yesterday. <img src=x onerror=alert(1)>', choiceId});
+      return route.fulfill({status: failProvider ? 429 : 200, headers, contentType: 'application/json', body: JSON.stringify(failProvider ? {error: {message: 'fixture-only'}} : {candidates: [{content: {parts: [{text}]}}]})});
     }
     unexpected.push(url); return route.abort();
   });
@@ -61,12 +69,21 @@ try {
   await panel.exposeFunction('__extensionPermission', origins => { for (const item of origins) allowedOrigins.add(item); return true; });
   await panel.exposeFunction('__extensionMessage', async message => {
     if (message.type === 'capture') return {ok: true, data: 'data:image/png;base64,' + (await survey.screenshot()).toString('base64')};
+    if (message.type === 'clear-circle') { await Promise.all(survey.frames().map(frame => frame.evaluate(clearCircle))); return {ok: true}; }
+    if (message.type === 'circle') {
+      circleCalls++;
+      const frame = survey.frames()[message.choice.frameId];
+      if (changeBeforeCircle) { changeBeforeCircle = false; await frame.evaluate(() => { document.querySelector('h2').textContent = 'A different survey question'; }); }
+      const result = await frame.evaluate(drawCircle, {scanId: message.choice.scanId, choiceId: message.choice.localId});
+      return result.ok ? {ok: true, data: result} : {ok: false, error: result.reason};
+    }
     const results = [];
     for (const [index, frame] of survey.frames().entries()) {
       if (!allowedOrigins.has(new URL(frame.url()).origin + '/*')) continue;
       results.push({frameId: index, result: await frame.evaluate(scanDocument)});
     }
-    return {ok: true, data: {tabId: 1, windowId: 1, ...await summarizeFrames(results, async host => allowedOrigins.has(host))}};
+    const summary = await summarizeFrames(results, async host => allowedOrigins.has(host)); lastChoices = summary.choices;
+    return {ok: true, data: {tabId: 1, windowId: 1, ...summary}};
   });
   await panel.addInitScript(() => {
     const area = name => ({get: value => window.__extensionStorage({area: name, method: 'get', value}), set: value => window.__extensionStorage({area: name, method: 'set', value}), remove: value => window.__extensionStorage({area: name, method: 'remove', value})});
@@ -92,6 +109,7 @@ try {
   assert.equal(await panel.locator('#frame-access').isVisible(), true);
   assert.match(await panel.locator('#frame-sites').textContent(), /survey.fixture.invalid/);
   assert.equal(requests.length, 0, 'Scanning must not send data to AI');
+  assert.doesNotMatch(JSON.stringify(lastChoices), /never-scan/, 'Option contexts must also exclude hidden text and personal fields');
   assert.equal(await survey.evaluate(() => window.clickCount), 0, 'Scanning must not press survey choices');
   console.log('PASS browser harness: actual page/iframe/open-shadow DOM scanning, hidden and input exclusions, cross-site access detection, no automatic AI or survey clicks.');
   await panel.getByRole('button', {name: 'Allow embedded survey sites', exact: true}).click();
@@ -101,7 +119,7 @@ try {
   await panel.getByRole('button', {name: 'Scan current page', exact: true}).click();
   await panel.locator('#image-preview').waitFor({state: 'visible'});
   assert.match(await panel.locator('#capture-image').getAttribute('src'), /^data:image\/png;base64,/);
-  await panel.getByRole('button', {name: 'Explain my choices', exact: true}).click();
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
   await panel.locator('#answer-section').waitFor({state: 'visible'});
   assert.equal(requests.length, 1);
   assert.match(requests[0].body.contents[0].parts[0].text, /Bought coffee yesterday/);
@@ -109,17 +127,62 @@ try {
   assert.equal(await panel.locator('#answer img').count(), 0);
   assert.match(await panel.locator('#answer').textContent(), /<img src=x/);
   assert.equal(await survey.evaluate(() => window.clickCount), 0);
+  const questionFrame = survey.frames().find(frame => frame.url().endsWith('/fixture-frame'));
+  await questionFrame.locator('[data-surveyside-circle]').waitFor({state: 'attached'});
+  assert.equal(await questionFrame.locator('input:checked').count(), 0);
+  assert.equal(await survey.locator('[data-surveyside-circle]').count(), 0);
+  const circleGeometry = await questionFrame.evaluate(() => {
+    const host = document.querySelector('[data-surveyside-circle]');
+    const ring = host.shadowRoot.firstElementChild.getBoundingClientRect();
+    const label = [...document.querySelectorAll('label')].find(node => node.textContent.trim() === 'Yes').getBoundingClientRect();
+    return {aligned: Math.abs(ring.left - (label.left - 9)) < 1 && Math.abs(ring.top - (label.top - 7)) < 1, pointerEvents: getComputedStyle(host).pointerEvents};
+  });
+  assert.equal(circleGeometry.aligned, true); assert.equal(circleGeometry.pointerEvents, 'none');
+  await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('Circled “Yes”'));
+  console.log('PASS circle: exact radio label inside the survey iframe, correct position, click-through overlay, radio remains unselected.');
+  if (process.env.SURVEYSIDE_CIRCLE_SCREENSHOT) await survey.screenshot({path: process.env.SURVEYSIDE_CIRCLE_SCREENSHOT});
   console.log('PASS browser harness: granted-frame rescan, screenshot preview/AI image delivery, simulated explanation rendered as safe text.');
   await panel.getByRole('button', {name: 'Remove screenshot', exact: true}).click();
   assert.equal(await panel.locator('#image-preview').isHidden(), true);
+  await questionFrame.locator('[data-surveyside-circle]').waitFor({state: 'detached'});
   text = await panel.locator('#question').inputValue();
   failProvider = true;
-  await panel.getByRole('button', {name: 'Explain my choices', exact: true}).click();
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
   await panel.locator('#error').waitFor({state: 'visible'});
   assert.match(await panel.locator('#error').textContent(), /usage or rate limit/);
   assert.equal(await panel.locator('#question').inputValue(), text);
   assert.equal(requests[1].body.contents[0].parts.length, 1);
-  assert.equal(await panel.getByRole('button', {name: 'Explain my choices', exact: true}).isEnabled(), true);
+  assert.equal(await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).isEnabled(), true);
+  failProvider = false;
+  for (const mode of ['unknown', 'missing']) {
+    choiceMode = mode;
+    const before = circleCalls;
+    await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
+    await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('No single captured option'));
+    assert.equal(circleCalls, before); assert.equal(await questionFrame.locator('[data-surveyside-circle]').count(), 0);
+  }
+  choiceMode = 'valid'; changeBeforeCircle = true;
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
+  await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('question changed'));
+  assert.equal(await questionFrame.locator('[data-surveyside-circle]').count(), 0);
+  await panel.getByLabel('Include a screenshot', {exact: false}).uncheck();
+  await panel.getByRole('button', {name: 'Scan current page', exact: true}).click();
+  await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('Captured locally'));
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
+  await questionFrame.locator('[data-surveyside-circle]').waitFor({state: 'attached'});
+  await questionFrame.evaluate(() => { document.querySelector('h2').textContent = 'Next question after the circle'; });
+  await questionFrame.locator('[data-surveyside-circle]').waitFor({state: 'detached'});
+  console.log('PASS stale/missing suggestions: unknown IDs and insufficient facts draw nothing; changed questions reject old suggestions and remove existing circles.');
+  await panel.getByRole('button', {name: 'Scan current page', exact: true}).click();
+  await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('Captured locally'));
+  choiceMode = 'dropdown';
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
+  await survey.locator('[data-surveyside-circle]').waitFor({state: 'attached'});
+  assert.equal(await survey.locator('select').inputValue(), 'Every day');
+  assert.match(await survey.locator('[data-surveyside-circle]').evaluate(host => host.shadowRoot.textContent), /Choose: Once a week/);
+  await panel.getByRole('button', {name: 'Hide circle', exact: true}).click();
+  await survey.locator('[data-surveyside-circle]').waitFor({state: 'detached'});
+  console.log('PASS dropdown: control is circled and the recommended option is named without changing the selected value; Hide circle cleans up.');
   await panel.reload();
   await panel.waitForFunction(() => document.querySelector('#api-key').value === 'fixture-key-not-real');
   assert.equal(await panel.locator('#question').inputValue(), '');
@@ -128,10 +191,11 @@ try {
   await panel.getByRole('button', {name: 'Forget key', exact: true}).click();
   await panel.waitForFunction(() => document.querySelector('#status').textContent.includes('forgotten'));
   await panel.locator('#question').fill('Fixture question');
-  await panel.getByRole('button', {name: 'Explain my choices', exact: true}).click();
+  const requestCount = requests.length;
+  await panel.getByRole('button', {name: 'Explain & circle best match', exact: true}).click();
   await panel.locator('#error').waitFor({state: 'visible'});
   assert.match(await panel.locator('#error').textContent(), /API key/);
-  assert.equal(requests.length, 2, 'Missing key must not call the provider');
+  assert.equal(requests.length, requestCount, 'Missing key must not call the provider');
   await panel.setViewportSize({width: 320, height: 900});
   assert.equal(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   assert.deepEqual(errors, []);

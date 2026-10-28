@@ -26,9 +26,9 @@ test('Gemini transport uses its fixed HTTPS host, puts the key only in a header 
     assert.equal(url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent');
     assert.equal(options.headers['x-goog-api-key'], 'fixture-secret');
     assert.equal(options.body.includes('fixture-secret'), false);
-    return Response.json({candidates: [{content: {parts: [{text: 'Choose the answer matching your facts.'}]}}]});
+    return Response.json({candidates: [{content: {parts: [{text: JSON.stringify({explanation: 'Choose the answer matching your facts.', choiceId: null})}]}}]});
   });
-  assert.equal(text, 'Choose the answer matching your facts.');
+  assert.deepEqual(text, {explanation: 'Choose the answer matching your facts.', choiceId: null});
 });
 
 test('provider errors do not expose returned secrets or manufacture answers', async () => {
@@ -80,5 +80,33 @@ test('a restricted iframe does not prevent scanning the main page; missing host 
     assert.equal(captured.tabId, 7);
     assert.deepEqual(captured.missingOrigins, ['https://survey.fixture.invalid/*']);
     assert.deepEqual(targets, [{tabId: 7, allFrames: true}, {tabId: 7}]);
+  } finally { delete globalThis.chrome; }
+});
+
+test('only an exact captured option ID can be returned for circling', async () => {
+  const input = {key: 'fixture', question: 'Fixture', choices: [{id: 'f2:known', label: 'Yes', kind: 'radio', context: 'Question', documentId: 'private-local-metadata'}]};
+  const provider = choiceId => async () => Response.json({candidates: [{content: {parts: [{text: JSON.stringify({explanation: 'Fixture explanation.', choiceId})}]}}]});
+  assert.equal((await explain(input, provider('f2:known'))).choiceId, 'f2:known');
+  assert.equal((await explain(input, provider('f3:unknown'))).choiceId, null);
+  assert.equal((await explain(input, provider(null))).choiceId, null);
+  assert.equal(JSON.stringify(buildRequest(input)).includes('private-local-metadata'), false);
+  await assert.rejects(explain(input, async () => Response.json({candidates: [{content: {parts: [{text: 'not JSON'}]}}]})), /No option was circled/);
+});
+
+test('circling targets the scanned document and refuses a different active tab', async () => {
+  let tab = {id: 7, windowId: 2, url: 'https://app.qmee.com/'};
+  const calls = [];
+  globalThis.chrome = {
+    tabs: {query: async () => [tab]},
+    scripting: {executeScript: async input => { calls.push(input); return [{result: {ok: true, label: 'Yes'}}]; }}
+  };
+  try {
+    const {circleOption} = await import('../background.mjs');
+    const input = {tabId: 7, windowId: 2, choice: {frameId: 2, documentId: 'fixture-doc', localId: 'fixture-choice', scanId: 'fixture-scan'}};
+    assert.equal((await circleOption(input)).label, 'Yes');
+    assert.deepEqual(calls[0].target, {tabId: 7, documentIds: ['fixture-doc']});
+    tab = {...tab, id: 99};
+    await assert.rejects(circleOption(input), /active tab changed/);
+    assert.equal(calls.length, 1);
   } finally { delete globalThis.chrome; }
 });

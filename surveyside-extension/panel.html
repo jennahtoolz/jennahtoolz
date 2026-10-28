@@ -25,12 +25,12 @@
     </section>
     <section aria-label="Get an explanation">
       <label for="note">What’s confusing? <span class="optional">optional</span></label><textarea id="note" rows="2" maxlength="2000" placeholder="For example: does “past month” include yesterday?"></textarea>
-      <button id="explain" type="button" class="primary wide">Explain my choices</button>
-      <p class="hint">Sends this preview, your facts and any screenshot directly to Gemini. You choose the answer on the survey.</p>
+      <button id="explain" type="button" class="primary wide">Explain &amp; circle best match</button>
+      <p class="hint">Sends this preview, your facts and any screenshot directly to Gemini. A supported matching option is circled on the page; you choose and submit it yourself.</p>
     </section>
     <p id="status" role="status" aria-live="polite"></p>
     <p id="error" role="alert" hidden></p>
-    <section id="answer-section" hidden><h2>Here’s the explanation</h2><div id="answer"></div><button id="copy" type="button" class="quiet">Copy explanation</button></section>
+    <section id="answer-section" hidden><h2>Here’s the explanation</h2><div id="answer"></div><div class="row"><button id="hide-circle" type="button" class="quiet" hidden>Hide circle</button><button id="copy" type="button" class="quiet">Copy explanation</button></div></section>
     <footer>Answers depend on your own facts. Survey eligibility is decided by the provider.</footer>
   </main>
   <script type="module" src="panel.mjs"></script>

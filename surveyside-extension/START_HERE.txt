@@ -9,7 +9,9 @@ SurveySide for Chrome
 7. In Setup, add your Gemini API key and click Save setup.
    Get your own key at https://aistudio.google.com/apikey
 8. Click Scan current page. Review the captured question.
-9. Click Explain my choices to ask Gemini for help.
+9. Click Explain & circle best match to ask Gemini for help.
+   A supported matching option gets an orange circle on the survey.
+   Review it and select the answer yourself. Hide circle removes it.
 
 For screen reading, check Include a screenshot of the visible tab
 before scanning. The screenshot appears as a preview before sending.
@@ -17,7 +19,13 @@ Use Allow embedded survey sites if a survey frame needs permission.
 
 No Python, npm, or Cloudflare setup is needed. Chrome 116+ is required.
 The key lasts for this browser session; enter it again after restarting.
-The extension explains choices using your facts. You choose the answer.
+The extension explains and circles choices using your facts.
+If facts are missing or the question changes, it does not guess a circle.
+You choose the answer. Dropdown circles name the option without selecting it.
 Provider qualification and screen-outs cannot be guaranteed.
+
+Updating an existing installation: replace the extension files in the
+same folder, then click Reload on its card at chrome://extensions.
+Refresh the survey tab and re-enter the session key in Setup.
 
 See README.md for data handling, permissions and testing limitations.
